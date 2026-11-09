@@ -1,0 +1,17 @@
+# Аристотель: источники страницы
+
+Проверено 9 ноября 2026. Все художественные реплики, современные примеры и вопросы созданы для страницы. Первичные трактаты не являются источником подробных сцен из биографии. Ссылки на MIT ведут к старым английским переводам; указанная там дата «350 B.C.E.» не принята за точную дату написания.
+
+| Область | Проверенная академическая опора | Первичный текст / место |
+| --- | --- | --- |
+| Жизнь, Академия, Македония, Ликей, смерть | [SEP — Aristotle](https://plato.stanford.edu/entries/aristotle/) §1; [IEP — Aristotle](https://iep.utm.edu/aristotle/) §1 | Биографические сведения восходят к разновременным свидетельствам; начало Академии ок.367, отъезд347, наставничество343/342, Ликей335/334, отъезд323, смерть322 до н.э. |
+| Характер корпуса и критика форм | SEP §§2,8–10; IEP §§1,3 | [Метафизика I](https://classics.mit.edu/Aristotle/metaphysics.1.i.html), I.1–2 980a21–983a23; I.9 990a33–993a10 |
+| Счастье и характер | [SEP — Aristotle’s Ethics](https://plato.stanford.edu/entries/aristotle-ethics/) | [Этика I](https://classics.mit.edu/Aristotle/nicomachaen.1.i.html) I.7–10; [II](https://classics.mit.edu/Aristotle/nicomachaen.2.ii.html) II.1–6; [VI](https://classics.mit.edu/Aristotle/nicomachaen.6.vi.html) VI.5,12–13 |
+| Дружба | SEP — Ethics | [Этика VIII](https://classics.mit.edu/Aristotle/nicomachaen.8.viii.html), VIII.1–3 1155a3–1157b5 |
+| Причины, природа, телеология | [SEP — Causality](https://plato.stanford.edu/entries/aristotle-causality/) §§2–3; [Natural Philosophy](https://plato.stanford.edu/entries/aristotle-natphil/) | [Физика II](https://classics.mit.edu/Aristotle/physics.2.ii.html), II.1–3,8; причины194b16–195b30 |
+| Живое, душа, возможность | [SEP — Psychology](https://plato.stanford.edu/entries/aristotle-psychology/) §§1–4,7; [IEP — Biology](https://iep.utm.edu/aristotle-biology/) | [О душе II](https://classics.mit.edu/Aristotle/soul.2.ii.html), II.1–3 412a6–415a13; [Метафизика IX](https://classics.mit.edu/Aristotle/metaphysics.9.ix.html), IX.1,6 |
+| Полис и критика исключения | [SEP — Political Theory](https://plato.stanford.edu/entries/aristotle-politics/); IEP §4 | [Политика I](https://classics.mit.edu/Aristotle/politics.1.one.html) I.2,4–7; [III](https://classics.mit.edu/Aristotle/politics.3.three.html) III.1,6–7 |
+| Феофраст | [SEP — Theophrastus](https://plato.stanford.edu/entries/theophrastus/) §§1,3,5 | Близкий коллега и преемник; место знакомства не установлено однозначно, самостоятельная работа не сводится к переписыванию Аристотеля. |
+| Позднейшее влияние | [IEP — Thomas Aquinas](https://iep.utm.edu/thomas-aquinas/) §1 (комментарии) | Фома — средневековый читатель через латинские переводы, не личный ученик. |
+
+Редакционные решения: не выдумывать детские сцены, точную программу Александра и мотивы отъезда347; не представлять анекдот о «втором преступлении Афин» как стенограмму. Роль раннего медицинского окружения — возможность, не установленная причинная история. Брак с Пифиадой и родство с Гермием имеют неясные детали. «Перипатетики» не доказывает, что все уроки проходили во время прогулки. Четыре причины — античная схема объяснения; аристотелевская физика и биология не выдаются за современные науки. Середина не арифметический компромисс и не оправдание умеренной несправедливости. Эвдемония не краткое настроение; роль внешних благ и созерцания оговорена. Защита рабства и подчинения женщин названа несправедливой и требующей критики; исторический контекст не используется как оправдание.
