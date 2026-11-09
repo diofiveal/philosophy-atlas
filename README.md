@@ -83,6 +83,15 @@ npm start
 
 Маршруты `/philosophers/socrates/` и `/#philosopher/socrates`. Содержимое — `src/data/socrates.ts` и `socrates-narrative.ts`; общий UI остаётся в `components/plato`, без второй копии компонентов. Раздел «Что обо мне написали» явно называет авторов и различает диалоги, воспоминания и комедийную сатиру. Карта различает личное общение и направленное влияние.
 
-`npm run check:profiles` проверяет данные обеих страниц, `npm run test:profiles` — их интерактивность в обычном и reduced-motion режимах и сброс состояния при смене философа. После `npm run build` запустите `node scripts/check-plato.mjs --build` для проверки обоих экспортированных маршрутов. Порядок добавления следующих профилей описан в `PHILOSOPHER_PAGE_TEMPLATE.md`, границы QA — в `docs/socrates-qa.md`.
+`npm run check:profiles` проверяет данные всех зарегистрированных профилей, `npm run test:profiles` — их интерактивность в обычном и reduced-motion режимах и сброс состояния при смене философа. После `npm run build` запустите `node scripts/check-plato.mjs --build` для проверки всех экспортированных маршрутов. Порядок добавления следующих профилей описан в `PHILOSOPHER_PAGE_TEMPLATE.md`, границы QA — в `docs/socrates-qa.md`.
 
 Чтение удалённого репозитория доступно; запись ранее отклонена подключением GitHub (403). Локальное наличие изменений не означает их публикацию или отправку на GitHub.
+
+
+## Аристотель, Эпикур и Марк Аврелий
+
+Добавлены `/philosophers/aristotle/`, `/philosophers/epicurus/` и `/philosophers/marcus-aurelius/`. Пять полных интерактивных страниц используют общий UI без дублирования компонентов; единый реестр — `src/data/immersive-profiles.ts`. Новые данные находятся в одноимённых файлах `src/data/`.
+
+У каждого нового собеседника пять глав с минималистичными фонами, пять идей, восемь разговоров с выбором ответа, книжные карточки и карта связей. Речь от первого лица обозначена как образовательная реконструкция. У Марка Аврелия пять карточек — тематические подборки одного произведения «Размышления»; у Эпикура отмечены фрагментарность наследия и спорное авторство отдельных текстов.
+
+Источники: `docs/aristotle-sources.md`, `docs/epicurus-sources.md`, `docs/marcus-aurelius-sources.md`. Иллюстрации: `docs/trio-illustrations.md`. Проверки и ограничения: `docs/trio-qa.md`. Обязательные команды: `npm run typecheck`, `npm run check:data`, `npm run check:profiles`, `npm run test:profiles`, `npm run build`, `node scripts/check-plato.mjs --build`.
