@@ -24,11 +24,13 @@ function loadTs(filename) {
   vm.runInThisContext(`(function(exports, require, module) {\n${compiled.outputText}\n})`, { filename })(module.exports, localRequire, module);
   return module.exports;
 }
-const profileNames = ['plato', 'socrates'];
+const { immersiveProfiles } = loadTs(path.join(root, 'src/data/immersive-profiles.ts'));
+assert(Array.isArray(immersiveProfiles) && immersiveProfiles.length > 0, 'Immersive profile registry must not be empty');
+const profileNames = immersiveProfiles.map(profile => profile.id);
+assert(new Set(profileNames).size === profileNames.length, 'Immersive profile registry IDs must be unique');
 const requested = process.argv.find(arg => arg.startsWith('--profile='))?.split('=')[1];
-assert(!requested || profileNames.includes(requested), 'Use --profile=plato or --profile=socrates');
-const profiles = (requested ? [requested] : profileNames).map(id =>
-  loadTs(path.join(root, `src/data/${id}.ts`))[`${id}Profile`]);
+assert(!requested || profileNames.includes(requested), `Use --profile=<id>; registered profiles: ${profileNames.join(', ')}`);
+const profiles = requested ? immersiveProfiles.filter(profile => profile.id === requested) : immersiveProfiles;
 const { philosophers } = loadTs(path.join(root, 'src/data/philosophers.ts'));
 const catalogueIds = new Set(philosophers.map(p => p.id));
 const errors = [];
@@ -48,13 +50,27 @@ function https(url, context) {
 }
 function asset(file, context) {
   check(filled(file) && file.startsWith('/') && !file.includes('..'), `${context}: invalid local image path`);
-  if (filled(file)) check(fs.existsSync(path.join(root, 'public', file)), `${context}: local image missing (${file})`);
+  if (!filled(file)) return;
+  const filename = path.join(root, 'public', file);
+  const exists = fs.existsSync(filename);
+  check(exists, `${context}: local image missing (${file})`);
+  if (!exists) return;
+  const bytes = fs.readFileSync(filename);
+  check(bytes.length > 0, `${context}: local image must not be empty (${file})`);
+  if (path.extname(file).toLowerCase() === '.webp') {
+    const validHeader = bytes.length >= 20
+      && bytes.toString('ascii', 0, 4) === 'RIFF'
+      && bytes.toString('ascii', 8, 12) === 'WEBP'
+      && bytes.readUInt32LE(4) + 8 === bytes.length;
+    check(validHeader, `${context}: invalid RIFF/WEBP container header or size (${file})`);
+  }
 }
 const summaries = [];
 for (const profile of profiles) {
 currentProfile = profile.id;
 const startingChecks = checks;
-check(profileNames.includes(profile.id), 'Profile must have a supported identity');
+check(/^[a-z][a-z0-9-]*$/.test(profile.id), 'Profile identity must be a URL-safe slug');
+for (const field of ['name', 'latinName', 'dates', 'subtitle', 'introduction']) check(filled(profile[field]), `Profile requires ${field}`);
 check(filled(profile.narrativeNotice), 'Fictional first-person narration requires a visible editorial notice');
 check(catalogueIds.has(profile.id), 'Immersive profile must exist in the original catalogue');
 check(fs.existsSync(path.join(root, `src/app/philosophers/${profile.id}/page.tsx`)), 'Direct App Router page must exist');
@@ -72,6 +88,14 @@ const questionIds = idsOf(profile.questions, 'Questions');
 const personIds = idsOf(profile.people, 'Graph people');
 idsOf(profile.chapters, 'Chapters'); idsOf(profile.ideas, 'Ideas'); idsOf(profile.connections, 'Connections');
 check(personIds.has(profile.id), `Graph must contain ${profile.id}`);
+check(profile.people[0]?.id === profile.id, 'Graph must place the featured philosopher first for the central map position');
+if (profile.id !== 'plato') {
+  for (const section of ['biography', 'ideas', 'books', 'connections', 'conversations']) {
+    for (const field of ['eyebrow', 'title', 'description']) check(filled(profile.pageCopy?.[section]?.[field]), `${section}: profile-specific ${field} required to avoid Plato fallback text`);
+    check(filled(profile.pageCopy?.nav?.[section]), `${section}: profile-specific navigation required`);
+  }
+  for (const field of ['sourceDescription', 'workLabel', 'recommendationLabel', 'narrativeLabel']) check(filled(profile.pageCopy?.[field]), `Profile-specific ${field} required`);
+}
 function references(item, context) {
   check(Array.isArray(item.sourceIds) && item.sourceIds.length > 0, `${context}: source references required`);
   for (const id of item.sourceIds ?? []) check(sourceIds.has(id), `${context}: unknown source ${id}`);
@@ -87,6 +111,7 @@ for (const theme of profile.themes) {
   check(Number.isFinite(theme.overlay) && theme.overlay >= 0 && theme.overlay <= 1, `${theme.id}: overlay must be between zero and one`);
 }
 for (const chapter of profile.chapters) {
+  for (const field of ['number', 'title', 'teaser', 'period']) check(filled(chapter[field]), `${chapter.id}: missing ${field}`);
   references(chapter, chapter.id);
   check(themeIds.has(chapter.themeId), `${chapter.id}: unknown theme`);
   check(chapter.paragraphs.length >= 3 && chapter.paragraphs.every(filled), `${chapter.id}: biography requires a substantive multi-paragraph story`);
@@ -94,6 +119,7 @@ for (const chapter of profile.chapters) {
   if (chapter.confidence !== 'established') check(filled(chapter.note), `${chapter.id}: qualified chronology needs an editorial note`);
 }
 for (const idea of profile.ideas) {
+  for (const field of ['number', 'title', 'teaser', 'symbol']) check(filled(idea[field]), `${idea.id}: missing ${field}`);
   references(idea, idea.id);
   check(themeIds.has(idea.themeId), `${idea.id}: unknown visual theme`);
   check(idea.paragraphs.length >= 3 && idea.paragraphs.every(filled), `${idea.id}: missing developed explanation`);
@@ -104,11 +130,12 @@ check(new Set(profile.ideas.map(i => i.themeId)).size === 5, 'Each idea must hav
 for (const work of profile.works) {
   references(work, work.id); https(work.readingUrl, work.id);
   for (const field of ['title', 'subtitle', 'recommendation', 'description', 'whyRead']) check(filled(work[field]), `${work.id}: missing ${field}`);
-  check(work.questions.length > 0 && work.keyIdeas.length > 0, `${work.id}: missing questions or key ideas`);
+  check(work.questions.length > 0 && work.questions.every(filled) && work.keyIdeas.length > 0 && work.keyIdeas.every(filled), `${work.id}: missing questions or key ideas`);
+  if (work.author !== undefined) check(filled(work.author), `${work.id}: author label must not be empty`);
 }
 for (const question of profile.questions) {
   references(question, question.id); idsOf(question.options, `${question.id} options`);
-  check(filled(question.prompt), `${question.id}: missing dilemma`);
+  check(filled(question.title) && filled(question.prompt), `${question.id}: missing question title or dilemma`);
   check(question.options.length >= 2, `${question.id}: needs at least two choices`);
   check(new Set(question.options.map(o => o.response)).size === question.options.length, `${question.id}: choices need distinct responses`);
   for (const option of question.options) {
@@ -118,10 +145,13 @@ for (const question of profile.questions) {
 }
 for (const id of profile.dilemmaIds) check(questionIds.has(id), `Dilemma ${id} missing`);
 for (const person of profile.people) {
+  for (const field of ['name', 'dates', 'summary']) check(filled(person[field]), `${person.id}: missing ${field}`);
+  check(['person', 'school'].includes(person.kind), `${person.id}: invalid graph node kind`);
   if (person.portrait) asset(person.portrait, person.id);
   if (person.href) {
     const match = person.href.match(/(?:#philosopher\/|\/philosophers\/)([a-z0-9-]+)\/?$/);
     check(Boolean(match && catalogueIds.has(match[1])), `${person.id}: linked philosopher page does not exist (${person.href})`);
+    if (match) check(match[1] === person.id, `${person.id}: link destination must match the actual graph person`);
   }
 }
 for (const connection of profile.connections) {

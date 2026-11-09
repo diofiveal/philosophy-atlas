@@ -27,10 +27,11 @@ const { act } = React;
 const { createRoot } = require('react-dom/client');
 const { default: PhilosopherPage, BiographyAccordion, PhilosophyIdeaCard, BooksGallery, IdeaDialogue } = require('../src/components/plato/PlatoPage.tsx');
 const Map = require('../src/components/plato/PhilosophyConnectionsMap.tsx').default;
-const profileNames = ['plato', 'socrates'];
+const { immersiveProfiles } = require('../src/data/immersive-profiles.ts');
+const profileNames = immersiveProfiles.map(profile => profile.id);
 const requested = process.argv.find(arg => arg.startsWith('--profile='))?.split('=')[1];
-if (requested && !profileNames.includes(requested)) throw new Error('Use --profile=plato or --profile=socrates');
-const profiles = (requested ? [requested] : profileNames).map(id => require(`../src/data/${id}.ts`)[`${id}Profile`]);
+if (requested && !profileNames.includes(requested)) throw new Error(`Use --profile=<id>; registered profiles: ${profileNames.join(', ')}`);
+const profiles = requested ? immersiveProfiles.filter(profile => profile.id === requested) : immersiveProfiles;
 const container = document.getElementById('test-root');
 let root, checks = 0;
 function check(condition, message) { checks++; if (!condition) throw new Error(message); }
@@ -146,11 +147,18 @@ async function mapTests(profile) {
     const otherId = connection.source === profile.id ? connection.target : connection.source;
     return profile.people.find(person => person.id === otherId)?.href;
   });
-  check(Boolean(navigable), 'Profile graph has an existing philosopher destination');
-  await click(listButtons()[profile.connections.indexOf(navigable)]);
-  await click(findButton('Открыть страницу', container.querySelector('.connection-detail')));
-  const targetId = navigable.source === profile.id ? navigable.target : navigable.source;
-  check(opened[0] === targetId, 'Existing philosopher link calls actual catalogue target');
+  let targetId;
+  if (navigable) {
+    await click(listButtons()[profile.connections.indexOf(navigable)]);
+    await click(findButton('Открыть страницу', container.querySelector('.connection-detail')));
+    targetId = navigable.source === profile.id ? navigable.target : navigable.source;
+    check(opened[0] === targetId, 'Existing philosopher link calls actual catalogue target');
+  } else {
+    check(!findButton('Открыть страницу', container.querySelector('.connection-detail')), 'A graph without catalogue destinations does not offer a dead navigation link');
+    check(opened.length === 0, 'A graph without catalogue destinations does not call navigation');
+    const connection = profile.connections[0];
+    targetId = connection.source === profile.id ? connection.target : connection.source;
+  }
   const filters = [...container.querySelectorAll('.connection-filters button')];
   for (const filter of filters) await click(filter);
   check(listButtons().length === 0, 'All filters off hides relationships');
@@ -194,14 +202,14 @@ async function profileSwitchTests() {
   };
   try {
     await render(page(profiles[0]));
-    for (const profile of [profiles[0], profiles[1]]) {
+    for (const [index, profile] of profiles.entries()) {
       verifyFresh(profile);
       await click(container.querySelector(`#chapter-trigger-${profile.chapters.at(-1).id}`));
       await click(container.querySelector(`#idea-trigger-${profile.ideas[0].id}`));
       await click(container.querySelectorAll('[role="tab"]')[4]);
       await click(container.querySelector('.plato-dilemmas .plato-dialogue-options button'));
       check(container.querySelector('.plato-dilemmas [aria-pressed="true"]'), `${profile.id}: route has a selected dialogue before switching`);
-      await act(async () => root.render(page(profile.id === profiles[0].id ? profiles[1] : profiles[0])));
+      await act(async () => root.render(page(profiles[(index + 1) % profiles.length])));
       await flush(reduced ? 50 : 300);
     }
     verifyFresh(profiles[0]);
@@ -215,10 +223,10 @@ async function profileSwitchTests() {
     await click(container.querySelector('.plato-save'));
     await click(container.querySelector('.back-link'));
     check(saveCount === 1 && backCount === 1, 'Save and return-to-catalogue delegate to Atlas callbacks');
-    for (const profile of profiles) {
+    for (const [index, profile] of profiles.entries()) {
       await render(React.createElement(Map, { profile, onOpenPhilosopher() {} }));
       for (const filter of container.querySelectorAll('.connection-filters button')) await click(filter);
-      const other = profiles.find(candidate => candidate.id !== profile.id);
+      const other = profiles[(index + 1) % profiles.length];
       await act(async () => root.render(React.createElement(Map, { profile: other, onOpenPhilosopher() {} })));
       await flush();
       check(container.querySelectorAll('.connection-accessible-list button').length === other.connections.length, `${profile.id} → ${other.id}: graph filters reset`);
@@ -235,7 +243,7 @@ async function profileSwitchTests() {
       await chapterTests(profile); await ideaTests(profile); await bookTests(profile); await dialogueTests(profile); await mapTests(profile);
       console.log(`PASS: ${profile.id}: ${checks - before} component interaction assertions (${reduced ? 'reduced' : 'normal'} motion).`);
     }
-    if (profiles.length === 2) await profileSwitchTests();
+    if (profiles.length >= 2) await profileSwitchTests();
     await act(async () => root.unmount());
     console.log(`PASS: ${checks} component interaction assertions (${reduced ? 'reduced' : 'normal'} motion). Chapters, capped backdrops, ideas/skip, books/keyboard, all profile dialogue choices/reset, map filters/details/navigation/keyboard.`);
     console.log('Scope: jsdom state/DOM tests only. No claims about browser hydration, visual layout, responsive geometry, pointer pan/zoom, or animation smoothness.');
